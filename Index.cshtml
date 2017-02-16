@@ -1,0 +1,255 @@
+﻿@using Sabio.Web.Enums
+
+@{
+    //Sabio:
+    ViewBag.Title = "Found!It";
+    Layout = "../Shared/_LayoutAdmin.cshtml";
+}
+
+@section styles {
+    <style type="text/css">
+
+        #page-wrapper {
+            overflow-y: scroll;
+        }
+
+        .tempBubble {
+            background-color: #1ab394;
+            color: #ffffff;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .imgUrlTemp {
+            max-height: 200px,;
+        }
+
+        .bttn-color {
+            border-color: #FFFFFF;
+            color: #FFFFFF;
+        }
+
+        .style-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFFFFF;
+            display: block;
+            margin: 2px 0 5px 0;
+        }
+
+        .footer{
+            position: fixed;
+        }
+    </style>
+}
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-sm-4">
+        <h2>Profile Style Options</h2>
+        <ol class="breadcrumb">
+            <li>
+                <a href="index.html">Home</a>
+            </li>
+            <li>
+                <a href="index.html">Admin</a>
+            </li>
+            <li class="active">
+                <strong>Breadcrumb</strong>
+            </li>
+        </ol>
+    </div>
+    <div class="col-sm-8">
+        <div class="title-action">
+            <a href="/admin/profile-style-options/create" class="btn btn-primary">Create Options</a>
+        </div>
+    </div>
+</div>
+
+<div class="wrapper wrapper-content">
+    <div class="animated fadeInRightBig" id="mainDiv" >
+        <div id="profileStyleOptionsContainer">
+
+            <!--templates append here-->
+
+        </div>
+    </div>
+</div>
+
+
+@section scripts {
+
+    <!--AJAX FUNCTIONS-->
+    <script src="~/Scripts/sabio/services/sabio.services.profilestyleoptions.js"></script>
+
+    <!--NOTIFICATIONS-->
+    <script src="~/Scripts/sabio/services/admin/sabio.services.admin.notifications.js"></script>
+
+    <!--MASONRY-->
+    <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+
+    <!--MOMENT.JS-->
+    <script src="~/inspinia/js/plugins/fullcalendar/moment.min.js"></script>
+
+    <script type="text/javascript">
+
+        sabio.page.startUp = function () {
+
+            sabio.services.profileStyleOptions.adminGet(sabio.page.handlers.onAjaxSuccess, sabio.page.handlers.onError);
+
+            $("#mainDiv").on("click", ".deleteBttn", sabio.page.handlers.deleteById);
+
+        };
+
+        sabio.page.setGender = @typeof(GenderKind).EnumToJsonByValue();
+
+        sabio.page.getIdDelete = null;
+
+        sabio.page.initializeMasonry = function(){
+            $('#profileStyleOptionsContainer').masonry({
+                itemSelector : '.grid-item',
+                columnWidth : 300
+            });
+        }
+
+        sabio.page.loopThruArray = function (data) {
+
+            var array = data.items;
+
+            for (var i = 0; i < array.length; i++) {
+            
+                var template = $($("#styleTemplate").html());
+
+                template.find(".iDTemp").text(array[i].id);
+                template.find(".styleNameTemp").text(array[i].styleName);
+                template.find(".styleDescTemp").text(array[i].styleDescription);
+                template.find(".genderTemp").text(sabio.page.setGender[array[i].gender].displayName);
+                template.find(".imageUrlTemp img").attr("src", array[i].imageUrl);
+
+                if (array[i].dateCreated !== array[i].dateModified ) {
+                    template.find(".dCreatedLabel").addClass("hidden"); 
+                    template.find(".dateTemp").text(moment(array[i].dateModified).format('MMMM Do YYYY, h:mm:ss a'));
+                   
+                } else {
+                    template.find(".dModifiedLabel").addClass("hidden");
+                    template.find(".dateTemp").text(moment(array[i].dateCreated).format('MMMM Do YYYY, h:mm:ss a'));  
+                    
+                }
+
+                template.find(".userIdTemp").text(array[i].userId);
+                template.find(".editBttn").attr("href", "/admin/profile-style-options/" + array[i].id + "/edit");
+
+                $("#profileStyleOptionsContainer").after(template);
+               
+               /*----Establish Masonry----*/ 
+                sabio.page.initializeMasonry();
+
+            };
+
+
+        }
+
+
+
+
+        /*-------------Post-----------------------*/
+        sabio.page.handlers.onAjaxSuccess = function (data) {
+            sabio.page.loopThruArray(data);
+
+        };
+
+        /*----------Delete By Id------------------*/
+
+        sabio.page.handlers.deleteById = function (){
+            sabio.page.getIdDelete = this;
+            sabio.services.admin.notifications.prompt("Are you sure you want to delete this Style Option?", sabio.page.delete);
+        };
+
+        sabio.page.delete = function (data){
+            var id = $(sabio.page.getIdDelete).closest(".styleTemplate").find(".iDTemp").text();
+            sabio.services.profileStyleOptions.deleteById(id, sabio.page.handlers.onDeleteSuccess, sabio.page.handlers.onError);
+        };
+
+        sabio.page.deleteOption = function (data){
+            var styleOption = sabio.page.getIdDelete;
+            styleOption.closest(".styleTemplate").remove();
+
+            /*----Establish Masonry----*/ 
+            sabio.page.initializeMasonry();
+        };
+
+        sabio.page.handlers.onDeleteSuccess = function (data) {
+            sabio.page.deleteOption();
+            sabio.services.admin.notifications.success("Style Option had been deleted!");
+            console.log(data);
+            console.log("Delete successful!")
+
+        };
+
+        /*-----------Select By Id-----------------*/
+
+        sabio.page.handlers.onIdSuccess = function (data) {
+            console.log(data);
+
+        };
+
+        /*-----------on Error--------------------*/
+        sabio.page.onErrorNotification = function(){
+            sabio.services.admin.notifications.error("Error has occured!");
+        }
+
+        sabio.page.handlers.onError = function () {
+            console.log("ERROR!");
+            sabio.page.onErrorNotification();
+        };
+
+
+    </script>
+
+
+
+    <script type="text/html" id="styleTemplate">
+
+        <form class="styleTemplate grid-item">
+            <div class="col-md-3">
+                <div class="ibox">
+                    <div class="ibox-content product-box">
+                        <div class="imageUrlTemp">
+
+                            <img scr="img">
+
+                        </div>
+                        <div class="product-desc tempBubble">
+                            <span class="product-price iDTemp">
+                                ID
+                            </span>
+                            <div>
+                                <small class="genderTemp">Gender</small>
+                                <div class="style-name styleNameTemp"> Style Name </div>
+
+                                <div class="small m-t-xs styleDescTemp">
+                                    Style Description
+                                </div>
+
+                                <label class="small m-t-xs dCreatedLabel" for="dateCreated">Date Created: </label>
+                                <label class="small m-t-xs dModifiedLabel" for="dateModified">Date Modified: </label>
+                                <div class="small m-t-xs dateTemp">Date</div>
+                                <label class="small m-t-xs">User ID: </label>
+                                <div class="small m-t-xs userIdTemp">User Id</div>
+                            </div>
+                            <div class="m-t">
+                            </div>
+
+                            <a class="btn btn-xs bttn-color editBttn">Edit</a>
+
+                            <a class="btn btn-xs bttn-color pull-right deleteBttn">Delete</a>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </script>
+}
