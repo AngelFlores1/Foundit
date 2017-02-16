@@ -1,0 +1,391 @@
+﻿@using Sabio.Web.Enums
+@using Sabio.Web.Models.ViewModels
+@model ItemViewModel<int>
+
+
+@{
+    //Sabio:
+    ViewBag.Title = "Found!It";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+@section styles {
+    <style type="text/css">
+        /* page styles */
+    </style>
+}
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-sm-4">
+        <h2>Page title</h2>
+        <ol class="breadcrumb">
+            <li>
+                <a href="index.html">Home</a>
+            </li>
+            <li>
+                <a href="index.html">Admin</a>
+            </li>
+            <li class="active">
+                <strong>Breadcrumb</strong>
+            </li>
+        </ol>
+    </div>
+    <div class="col-sm-8">
+        <div class="title-action">
+            <a href="" class="btn btn-primary">Do Something</a>
+        </div>
+    </div>
+</div>
+
+<div class="wrapper wrapper-content">
+    <div class="animated fadeInRightBig">
+        <h3 class="font-bold">Profile Style Options</h3>
+
+
+        <!--FORM START-->
+
+        <div class="ibox-content">
+
+            <form method="get" class="form-horizontal" id="styleOptionsForm">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Style Name: </label>
+                    <div class="col-sm-10"><input type="text" id="styleName" name="styleName" placeholder="(i.e.) Casual, Sporty, Bohemian, etc." class="form-control"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Style Description: </label>
+                    <div class="col-sm-10"><textarea type="text" rows="3" id="styleDesc" name="styleDescription" placeholder="I like to wear scarves, dark colors, accessories, etc." class="form-control"></textarea></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Gender: <br /></label>
+                    <div class="col-sm-10" id="gender">
+
+                        <!--gender radio buttons go here-->
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Image URL: </label>
+                    <div class="col-sm-10"><input type="url" id="userURL" name="userURL" placeholder="(ex)http://www.imageurl.com" class="form-control"></div>
+                </div>
+
+                <div class="hr-line-dashed"></div>
+                <div class="form-group">
+                    <div class="col-sm-4 col-sm-offset-2">
+                        <button class="btn btn-primary" id="submitStyleInfo" type="submit">Submit</button>
+
+                        <button class="btn btn-primary" id="clearStyleInfo" type="reset">Reset</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!--FORM END-->
+    </div>
+</div>
+
+
+@section scripts {
+
+    <!--AJAX FUNCTIONS-->
+    <script src="~/Scripts/sabio/services/sabio.services.profilestyleoptions.js"></script>
+
+    <!--NOTIFICATIONS-->
+    <script src="~/Scripts/sabio/services/admin/sabio.services.admin.notifications.js"></script>
+
+    <script type="text/javascript">
+        sabio.page.genderKinds = @typeof(GenderKind).EnumToJson(1);
+
+
+        @if(Model.Item != 0){
+
+             <text>
+                sabio.page.postIdFromEdit = @Model.Item;
+            </text>
+        }
+        else
+        {
+            <text>
+                sabio.page.postIdFromEdit = null;
+            </text>
+        }
+
+        sabio.page.postId = null;
+
+        sabio.page.startUp = function () {
+
+            /*append radio buttons + grad values from enum*/
+            sabio.page.initializeGender();
+
+            /*form validation*/
+            sabio.page.initializeValidation();
+
+            /*submit button: post(create) + put(update)*/
+            $("#submitStyleInfo").on("click", sabio.page.handlers.postAndPutValues);
+
+            /*reset button: clear input fields + reset data*/
+            $("#clearStyleInfo").on("click", sabio.page.handlers.resetForm);
+
+            /*get by id ajax call*/
+            sabio.page.getIdData();
+
+}
+
+        /*get by id ajax call*/
+        sabio.page.getIdData = function(){
+
+            if (sabio.page.postIdFromEdit !== null){
+                sabio.services.profileStyleOptions.getById(sabio.page.postIdFromEdit, sabio.page.handlers.onIdSuccess, sabio.page.handlers.onError);
+            };
+        }
+
+        /*reset + clear form*/
+        sabio.page.resetFormValues = function(){
+
+            if(sabio.page.postIdFromEdit !== null){
+                sabio.services.profileStyleOptions.getById(sabio.page.postIdFromEdit, sabio.page.handlers.onIdSuccess, sabio.page.handlers.onError);
+            }
+            else
+            {
+                sabio.page.postId = null;
+                $("#styleOptionsForm")[0].reset();
+            }
+
+
+        };
+
+        sabio.page.handlers.resetForm = function () {
+
+            sabio.page.resetFormValues();
+
+        };
+
+
+        sabio.page.initializeGender = function () {
+            var $gender = $("#gender");
+
+            for (var key in sabio.page.genderKinds) {
+
+                var currentGender = sabio.page.genderKinds[key];
+
+                var $radioBttn = $($(radioBttnTemplate).html());
+
+                $radioBttn.find("input[type=radio]").attr("value", currentGender.value);
+                $radioBttn.find(".radioSpan").text(currentGender.displayName);
+
+                $gender.append($radioBttn);
+
+    }
+}
+
+
+        sabio.page.initializeValidation = function () {
+
+    jQuery.validator.setDefaults({
+        debug: true
+            });
+
+            $("#styleOptionsForm").validate({
+
+                    rules: {
+                        styleName: {
+                            required: true,
+                        maxlength: 50
+                        },
+                    styleDescription: {
+                            required: true,
+                        maxlength: 200
+                    },
+                    gender: {
+                            required: true,
+                    },
+                    userURL: {
+                            required: true,
+                        url: true,
+                        maxlength: 1000
+                    }
+                    },
+                messages: {
+                        styleName: {
+                            required: "Please enter your preferred style!",
+                        maxlength: "50 character maximum"
+                        },
+                    styleDescription: {
+                            required: "Tell us what kind of look you want!",
+                        maxlength: "200 character maximum"
+                    },
+                    gender: {
+                            required: "Select your gender!",
+                    },
+                    userURL: {
+                            required: "Input a valid url!",
+                        max: "1000 character maximum"
+                    }
+                    },
+                /*append validation message below radio buttons*/
+                errorPlacement: function(error, element)
+                {
+                        if ( element.is(":radio") )
+                    {
+                            error.appendTo( element.parents('#gender') );
+                        }
+                    else
+                    { // This is the default behavior
+                            error.insertAfter( element );
+                        }
+                    }
+                });
+
+            }
+
+        sabio.page.readFormValues = function(data){
+
+            if ($("#styleOptionsForm").valid()) {
+                var styleName = $("#styleName").val();
+                var styleDescription = $("#styleDesc").val();
+                var gender = $("input[name='gender']:checked").val();
+                var imageUrl = $("#userURL").val();
+
+                var data = {
+                    id: sabio.page.postId,
+                    styleName: styleName,
+                    styleDescription: styleDescription,
+                    gender: gender,
+                    imageUrl: imageUrl
+                }
+
+
+                if(sabio.page.postIdFromEdit != null){
+                    sabio.page.putEdit(data);
+                } else {
+
+                    if (sabio.page.postId == null){
+                        sabio.page.post(data);
+                    } else {
+                        sabio.page.put(data);
+                    }
+
+                }
+            };
+
+        };
+
+        sabio.page.handlers.postAndPutValues = function (event) {
+            event.preventDefault();
+
+            sabio.page.readFormValues();
+        };
+
+
+        sabio.page.populateData = function (data) {
+
+            var formData = data;
+
+            $("#styleName").val(formData.styleName);
+            $("#styleDesc").val(formData.styleDescription);
+            $("input[name=gender][value ='" + formData.gender + "']").prop('checked', true);
+            $("#userURL").val(formData.imageUrl);
+
+        };
+
+
+        /*---------Post Style Option----------*/
+
+        sabio.page.post = function(data){
+            sabio.services.profileStyleOptions.insert(data, sabio.page.handlers.onPostSuccess, sabio.page.handlers.onError);
+        }
+
+        sabio.page.onPostNotification = function(){
+            sabio.services.admin.notifications.success("Style Option was submitted!");
+        }
+
+        sabio.page.onPostSuccess = function(data){
+            sabio.page.postId = data;
+            console.log(data);
+            sabio.page.onPostNotification();
+            window.location.href = "/admin/profile-style-options"
+        };
+
+        sabio.page.handlers.onPostSuccess = function(data) {
+            sabio.page.onPostSuccess(data.item);
+
+        };
+
+
+        /*---------Put Style Option-----------*/
+
+        sabio.page.put = function(data){
+            if(sabio.page.postId !== null){
+                id = sabio.page.postId;
+                sabio.services.profileStyleOptions.update(id, data, sabio.page.handlers.onPutSuccess, sabio.page.handlers.onError);
+            }
+        };
+
+        sabio.page.putEdit = function(data){
+            data.id = sabio.page.postIdFromEdit;
+            sabio.services.profileStyleOptions.update(data.id, data, sabio.page.handlers.onPutSuccess, sabio.page.handlers.onError);
+
+        };
+
+        sabio.page.onPutNotification = function(){
+            sabio.services.admin.notifications.success("Style Option was updated!");
+            window.location.href = "/admin/profile-style-options"
+        };
+
+        sabio.page.onPutSuccess = function (data){
+            console.log(data);
+            console.log("Update has been made!");
+            sabio.page.onPutNotification();
+        };
+
+        sabio.page.handlers.onPutSuccess = function (data){
+            sabio.page.onPutSuccess(data);
+
+        };
+
+
+        /*------------Edit By Id--------------*/
+
+        sabio.page.onIdSuccess = function(data){
+            var formData = data;
+            console.log(formData);
+            if (formData) {
+                sabio.page.populateData(formData);
+            }
+        };
+
+        sabio.page.handlers.onIdSuccess = function(data){
+            sabio.page.onIdSuccess(data.item);
+        };
+
+
+        /*--------------On Error-------------*/
+
+        sabio.page.onErrorNotification = function(){
+            sabio.services.admin.notifications.error("Error has occured!");
+        };
+
+        sabio.page.handlers.onError = function (){
+            console.log("INVALID INPUT!");
+            sabio.page.onErrorNotification();
+
+        };
+
+
+    </script>
+
+    <script type="text/html" id="radioBttnTemplate">
+
+        <div>
+            <label>
+
+                <input class='i-checks radio-inline' type='radio' value='' name='gender'><span class="radioSpan">Text</span>
+
+            </label>
+        </div>
+
+    </script>
+
+}
